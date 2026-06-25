@@ -1,14 +1,19 @@
 :root {
-  --snes-bg: #1a1a2e;
-  --snes-surface: #16213e;
-  --snes-border: #0f0f23;
-  --snes-cyan: #00d9ff;
-  --snes-magenta: #ff6ec7;
-  --snes-yellow: #ffe66d;
-  --snes-green: #7cfc00;
-  --snes-red: #ff4757;
-  --snes-text: #eaeaea;
-  --snes-shadow: #000000;
+  --snes-bg: #7ec8e3;
+  --snes-bg-warm: #fff3c4;
+  --snes-surface: #fff8e7;
+  --snes-surface-alt: #e8f7ff;
+  --snes-border: #1b6b8a;
+  --snes-cyan: #219ebc;
+  --snes-magenta: #ff6b9d;
+  --snes-yellow: #ffb703;
+  --snes-orange: #fb8500;
+  --snes-green: #52b788;
+  --snes-green-dark: #2d6a4f;
+  --snes-red: #e63946;
+  --snes-text: #1b4965;
+  --snes-text-light: #fff8e7;
+  --snes-shadow: #145374;
   --font-pixel: 'Press Start 2P', monospace;
   --border-thick: 4px;
 }
@@ -26,7 +31,9 @@ html {
 body {
   margin: 0;
   min-height: 100dvh;
-  background: var(--snes-bg);
+  background:
+    linear-gradient(180deg, #5ec2e8 0%, #9eddf5 38%, #fff3c4 72%, #ffd6a5 100%);
+  background-attachment: fixed;
   color: var(--snes-text);
   font-family: var(--font-pixel);
   font-size: 10px;
@@ -57,15 +64,16 @@ body {
   border: var(--border-thick) solid var(--snes-border);
   box-shadow:
     var(--border-thick) var(--border-thick) 0 var(--snes-shadow),
-    inset 0 0 0 2px rgba(255, 255, 255, 0.08);
+    inset 0 0 0 2px rgba(255, 255, 255, 0.55);
 }
 
 .title {
   margin: 0 0 12px;
   font-size: 14px;
-  color: var(--snes-yellow);
+  color: var(--snes-orange);
   text-align: center;
   line-height: 1.8;
+  text-shadow: 2px 2px 0 rgba(255, 183, 3, 0.35);
 }
 
 .title--small {
@@ -94,7 +102,7 @@ body {
 .input {
   width: 100%;
   padding: 12px;
-  background: var(--snes-bg);
+  background: var(--snes-surface-alt);
   border: var(--border-thick) solid var(--snes-border);
   color: var(--snes-text);
   font-family: var(--font-pixel);
@@ -103,7 +111,8 @@ body {
 }
 
 .input:focus {
-  border-color: var(--snes-cyan);
+  border-color: var(--snes-yellow);
+  background: #fff;
 }
 
 .error {
@@ -129,29 +138,29 @@ body {
 }
 
 .btn-primary {
-  background: var(--snes-cyan);
-  color: var(--snes-bg);
+  background: var(--snes-yellow);
+  color: var(--snes-text);
   box-shadow:
     var(--border-thick) var(--border-thick) 0 var(--snes-shadow),
-    inset -2px -2px 0 rgba(0, 0, 0, 0.2),
-    inset 2px 2px 0 rgba(255, 255, 255, 0.3);
+    inset -2px -2px 0 rgba(0, 0, 0, 0.15),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.45);
 }
 
 .btn-primary:hover {
-  background: #33e2ff;
+  background: #ffc933;
 }
 
 .btn-secondary {
   background: var(--snes-magenta);
-  color: var(--snes-bg);
+  color: var(--snes-text-light);
   box-shadow:
     var(--border-thick) var(--border-thick) 0 var(--snes-shadow),
-    inset -2px -2px 0 rgba(0, 0, 0, 0.2),
-    inset 2px 2px 0 rgba(255, 255, 255, 0.3);
+    inset -2px -2px 0 rgba(0, 0, 0, 0.15),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.35);
 }
 
 .btn-secondary:hover {
-  background: #ff8ed5;
+  background: #ff85b0;
 }
 
 /* Board */
@@ -164,6 +173,10 @@ body {
 .board-header {
   text-align: center;
   margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(255, 248, 231, 0.85);
+  border: var(--border-thick) solid var(--snes-border);
+  box-shadow: var(--border-thick) var(--border-thick) 0 var(--snes-shadow);
 }
 
 .player-name {
@@ -172,13 +185,29 @@ body {
   color: var(--snes-cyan);
 }
 
+.bingo-stars {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.bingo-star {
+  font-size: 14px;
+  line-height: 1;
+  color: var(--snes-yellow);
+  text-shadow:
+    1px 1px 0 var(--snes-orange),
+    2px 2px 0 var(--snes-shadow);
+}
+
 .timer {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: var(--snes-surface);
-  border: var(--border-thick) solid var(--snes-border);
+  background: var(--snes-surface-alt);
+  border: 3px solid var(--snes-border);
 }
 
 .timer__label {
@@ -188,15 +217,15 @@ body {
 
 .timer__value {
   font-size: 10px;
-  color: var(--snes-yellow);
+  color: var(--snes-orange);
 }
 
 .win-banner {
   margin-bottom: 16px;
   padding: 16px;
   text-align: center;
-  background: var(--snes-green);
-  color: var(--snes-bg);
+  background: linear-gradient(135deg, var(--snes-yellow) 0%, var(--snes-orange) 100%);
+  color: var(--snes-text);
   border: var(--border-thick) solid var(--snes-border);
   box-shadow: var(--border-thick) var(--border-thick) 0 var(--snes-shadow);
   animation: pulse 0.8s ease-in-out infinite alternate;
@@ -226,6 +255,10 @@ body {
   grid-template-columns: repeat(5, 1fr);
   gap: 4px;
   width: 100%;
+  padding: 6px;
+  background: rgba(255, 248, 231, 0.7);
+  border: var(--border-thick) solid var(--snes-border);
+  box-shadow: var(--border-thick) var(--border-thick) 0 var(--snes-shadow);
 }
 
 .bingo-cell {
@@ -236,7 +269,7 @@ body {
   aspect-ratio: 1;
   padding: 4px;
   background: var(--snes-surface);
-  border: 3px solid var(--snes-border);
+  border: 3px solid var(--snes-cyan);
   color: var(--snes-text);
   font-family: var(--font-pixel);
   font-size: 5px;
@@ -244,12 +277,13 @@ body {
   cursor: pointer;
   overflow: hidden;
   box-shadow:
-    inset -2px -2px 0 rgba(0, 0, 0, 0.3),
-    inset 2px 2px 0 rgba(255, 255, 255, 0.1);
+    inset -2px -2px 0 rgba(27, 107, 138, 0.15),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.5);
 }
 
 .bingo-cell:hover:not(:disabled) {
-  border-color: var(--snes-cyan);
+  border-color: var(--snes-orange);
+  background: #fffacd;
 }
 
 .bingo-cell:disabled {
@@ -257,8 +291,8 @@ body {
 }
 
 .bingo-cell--marked {
-  background: #2d4a22;
-  border-color: var(--snes-green);
+  background: #b7e4c7;
+  border-color: var(--snes-green-dark);
 }
 
 .bingo-cell__text {
@@ -274,8 +308,8 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 6px;
-  color: var(--snes-green);
-  opacity: 0.85;
+  color: var(--snes-green-dark);
+  opacity: 0.9;
   transform: rotate(-12deg);
   pointer-events: none;
 }
@@ -283,7 +317,9 @@ body {
 .board-actions {
   margin-top: 16px;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
 }
 
 .board-actions .btn {
@@ -300,6 +336,11 @@ body {
 @media (min-width: 480px) {
   body {
     font-size: 11px;
+  }
+
+  .bingo-grid {
+    gap: 5px;
+    padding: 8px;
   }
 
   .bingo-cell {

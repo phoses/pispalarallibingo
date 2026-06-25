@@ -10,15 +10,23 @@ defineProps({
   formattedFinalTime: { type: String, default: '0:00' },
   canShuffle: { type: Boolean, default: false },
   isPlaying: { type: Boolean, default: false },
+  bingoCount: { type: Number, default: 0 },
 })
 
-const emit = defineEmits(['shuffle', 'toggle'])
+const emit = defineEmits(['shuffle', 'toggle', 'reset', 'clear-marks'])
 </script>
 
 <template>
   <div class="board-container">
     <header class="board-header">
-      <h1 class="title title--small">Pispala Bingo</h1>
+      <h1 class="title title--small">PispalaRalli-Bingo</h1>
+      <div
+        v-if="bingoCount > 0"
+        class="bingo-stars"
+        :aria-label="`Saavutetut bingot: ${bingoCount}`"
+      >
+        <span v-for="n in bingoCount" :key="n" class="bingo-star" aria-hidden="true">★</span>
+      </div>
       <p class="player-name">{{ username }}</p>
       <div v-if="isPlaying" class="timer">
         <span class="timer__label">Aika</span>
@@ -43,6 +51,22 @@ const emit = defineEmits(['shuffle', 'toggle'])
     </div>
 
     <div class="board-actions">
+      <button
+        v-if="phase === 'won'"
+        type="button"
+        class="btn btn-primary"
+        @click="emit('reset')"
+      >
+        Uusi bingo
+      </button>
+      <button
+        v-if="phase === 'playing'"
+        type="button"
+        class="btn btn-secondary"
+        @click="emit('clear-marks')"
+      >
+        Nollaa valinnat
+      </button>
       <button
         v-if="canShuffle"
         type="button"

@@ -18,6 +18,9 @@ const {
   formattedFinalTime,
   canShuffle,
   isPlaying,
+  bingoCount,
+  clearMarks,
+  resetGame,
 } = useBingo()
 
 function onUnlock(password) {
@@ -47,8 +50,11 @@ function onUnlock(password) {
       :formatted-final-time="formattedFinalTime"
       :can-shuffle="canShuffle"
       :is-playing="isPlaying"
+      :bingo-count="bingoCount"
       @shuffle="shuffleGrid"
       @toggle="toggleCell"
+      @clear-marks="clearMarks"
+      @reset="resetGame"
     />
   </main>
 </template>

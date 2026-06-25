@@ -79,6 +79,7 @@ export function useBingo() {
   const marked = ref(initial.marked ?? createEmptyMarked())
   const startTime = ref(saved?.startTime ?? null)
   const endTime = ref(saved?.endTime ?? null)
+  const bingoCount = ref(saved?.bingoCount ?? 0)
   const tick = ref(0)
 
   let timerInterval = null
@@ -112,6 +113,7 @@ export function useBingo() {
       marked: marked.value,
       startTime: startTime.value,
       endTime: endTime.value,
+      bingoCount: bingoCount.value,
     })
   }
 
@@ -155,9 +157,36 @@ export function useBingo() {
     if (checkWin(marked.value)) {
       endTime.value = Date.now()
       phase.value = 'won'
+      bingoCount.value++
       stopTimer()
     }
 
+    persist()
+  }
+
+  function clearMarks() {
+    if (phase.value !== 'playing') return
+    const fresh = createEmptyMarked()
+    if (useFreeCenter) {
+      fresh[12] = true
+    }
+    marked.value = fresh
+    phase.value = 'ready'
+    startTime.value = null
+    endTime.value = null
+    stopTimer()
+    persist()
+  }
+
+  function resetGame() {
+    if (phase.value !== 'won') return
+    const fresh = drawGrid()
+    grid.value = fresh.grid
+    marked.value = fresh.marked
+    phase.value = 'ready'
+    startTime.value = null
+    endTime.value = null
+    stopTimer()
     persist()
   }
 
@@ -192,5 +221,8 @@ export function useBingo() {
     formattedFinalTime,
     canShuffle,
     isPlaying,
+    bingoCount,
+    clearMarks,
+    resetGame,
   }
 }
