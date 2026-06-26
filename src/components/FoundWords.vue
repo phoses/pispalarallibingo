@@ -1,4 +1,6 @@
 <script setup>
+import { displayWord } from '../utils/format.js'
+
 defineProps({
   words: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false },
@@ -28,7 +30,7 @@ defineEmits(['refresh'])
 
     <ul v-else class="found-words-list">
       <li v-for="item in words" :key="item.word" class="found-word">
-        <span class="found-word__text">{{ item.word }}</span>
+        <span class="found-word__text">{{ displayWord(item.word) }}</span>
         <span v-if="item.username" class="found-word__meta">
           {{ item.username }} · {{ item.foundAtLabel }}
         </span>

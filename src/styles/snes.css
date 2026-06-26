@@ -358,9 +358,17 @@ body {
 }
 
 .bingo-cell__text {
+  display: block;
+  width: 100%;
   text-align: center;
-  word-break: break-word;
-  hyphens: auto;
+  line-height: 1.25;
+  word-break: normal;
+  overflow-wrap: break-word;
+  pointer-events: none;
+}
+
+.bingo-cell__hyphen {
+  color: var(--snes-cyan);
 }
 
 .bingo-cell__stamp {

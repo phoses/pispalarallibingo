@@ -9,8 +9,16 @@ export function playerId(username) {
   return username.trim().toLowerCase().replace(/[^a-z0-9åäöü_-]/gi, '_')
 }
 
+export function stripSoftHyphens(word) {
+  return word.replace(/\u00AD/g, '')
+}
+
+export function displayWord(word) {
+  return word.replace(/\u00AD/g, '-')
+}
+
 export function wordId(word) {
-  return word
+  return stripSoftHyphens(word)
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9åäöü_-]/gi, '_')
