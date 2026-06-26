@@ -31,7 +31,7 @@ Firestore-kokoelma: `players` – jokainen pelaaja omana dokumenttinaan.
 Lisää repoon **Settings → Secrets and variables → Actions**:
 
 - `VITE_FIREBASE_*` – samat arvot kuin `.env`
-- `FIREBASE_SERVICE_ACCOUNT` – Firebase Console → Project settings → Service accounts → **Generate new private key** (koko JSON-tiedoston sisältö)
+- `FIREBASE_TOKEN` – luo paikallisesti: `firebase login:ci` (kopioi tulostettu token)
 
 ## Peli
 
