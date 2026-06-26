@@ -26,7 +26,6 @@ export const bingoWords = [
   'Tuntematon alkaa juttelemaan',
   'Life is life',
   'We are the kings',
-  'Fanihuivi baaritiskin reunalla',
   'Ilves-logo',
   'Tappara-logo',
   'Skuutti ojassa',
@@ -48,5 +47,6 @@ export const bingoWords = [
   '80-luvun biisi soi',
   '90-luvun biisi soi',
   'Paranoid',
-  '"Missä Topi?"'
+  '"Missä Topi?"',
+  'Avuoauto'
 ]
