@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /players/{playerId} {
+      allow read: if true;
+      allow create, update: if request.resource.data.username is string
+        && request.resource.data.username.size() >= 1
+        && request.resource.data.username.size() <= 32
+        && request.resource.data.foundWords is list
+        && request.resource.data.wins is list;
+      allow delete: if false;
+    }
+  }
+}

@@ -167,16 +167,20 @@ body {
 
 .board-container {
   width: 100%;
-  max-width: 480px;
+}
+
+.app-header {
+  text-align: center;
+  margin-bottom: 12px;
+  padding: 12px;
+  background: rgba(255, 248, 231, 0.85);
+  border: var(--border-thick) solid var(--snes-border);
+  box-shadow: var(--border-thick) var(--border-thick) 0 var(--snes-shadow);
 }
 
 .board-header {
   text-align: center;
   margin-bottom: 16px;
-  padding: 12px;
-  background: rgba(255, 248, 231, 0.85);
-  border: var(--border-thick) solid var(--snes-border);
-  box-shadow: var(--border-thick) var(--border-thick) 0 var(--snes-shadow);
 }
 
 .player-name {
@@ -344,6 +348,178 @@ body {
   }
 
   .bingo-cell {
+    font-size: 7px;
+  }
+}
+
+/* App shell & tabs */
+
+.app--with-tabs {
+  align-items: flex-start;
+  padding-top: 12px;
+}
+
+.app-shell {
+  width: 100%;
+  max-width: 480px;
+}
+
+.app-content {
+  width: 100%;
+}
+
+.app-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.app-tabs__btn {
+  padding: 10px 4px;
+  background: var(--snes-surface);
+  border: 3px solid var(--snes-border);
+  color: var(--snes-text);
+  font-family: var(--font-pixel);
+  font-size: 5px;
+  line-height: 1.5;
+  cursor: pointer;
+  box-shadow:
+    2px 2px 0 var(--snes-shadow),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.1),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.app-tabs__btn--active {
+  background: var(--snes-yellow);
+  border-color: var(--snes-orange);
+  color: var(--snes-text);
+}
+
+.app-tabs__btn:active {
+  transform: translate(1px, 1px);
+}
+
+/* Panels (leaderboard, found words) */
+
+.panel {
+  width: 100%;
+}
+
+.panel-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+.panel-message {
+  margin: 0;
+  padding: 16px;
+  text-align: center;
+  font-size: 7px;
+  line-height: 1.8;
+  background: var(--snes-surface);
+  border: 3px solid var(--snes-border);
+}
+
+.panel-message--error {
+  color: var(--snes-red);
+}
+
+.panel-hint {
+  margin: 12px 0 0;
+  text-align: center;
+  font-size: 6px;
+  color: var(--snes-cyan);
+}
+
+.btn--small {
+  padding: 8px 12px;
+  font-size: 6px;
+}
+
+.leaderboard-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.leaderboard-row {
+  display: grid;
+  grid-template-columns: 24px 1fr auto auto;
+  gap: 6px;
+  align-items: center;
+  padding: 10px 8px;
+  background: var(--snes-surface);
+  border: 3px solid var(--snes-cyan);
+  font-size: 6px;
+}
+
+.leaderboard-row--top {
+  background: #fff3cd;
+  border-color: var(--snes-orange);
+}
+
+.leaderboard-row--winner {
+  border-color: var(--snes-orange);
+}
+
+.leaderboard-rank {
+  color: var(--snes-magenta);
+}
+
+.leaderboard-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leaderboard-words {
+  color: var(--snes-cyan);
+  white-space: nowrap;
+}
+
+.leaderboard-time {
+  color: var(--snes-orange);
+  white-space: nowrap;
+}
+
+.leaderboard-time--empty {
+  color: var(--snes-border);
+  opacity: 0.5;
+}
+
+.found-words-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.found-word {
+  padding: 10px 12px;
+  background: var(--snes-surface);
+  border: 2px solid var(--snes-cyan);
+  font-size: 6px;
+  line-height: 1.5;
+}
+
+.found-word:nth-child(odd) {
+  background: var(--snes-surface-alt);
+}
+
+@media (min-width: 400px) {
+  .app-tabs__btn {
+    font-size: 6px;
+  }
+
+  .leaderboard-row,
+  .found-word {
     font-size: 7px;
   }
 }

@@ -1,5 +1,6 @@
 import { ref, computed, onUnmounted } from 'vue'
 import { bingoWords, useFreeCenter } from '../data/bingoWords.js'
+import { formatDuration } from '../utils/format.js'
 
 const STORAGE_KEY = 'pispala-bingo-v1'
 const GRID_SIZE = 25
@@ -39,13 +40,6 @@ function checkWin(marked) {
   return false
 }
 
-function formatDuration(ms) {
-  const totalSeconds = Math.floor(ms / 1000)
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  return `${minutes}:${String(seconds).padStart(2, '0')}`
-}
-
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -68,7 +62,7 @@ function getInitialPhase(saved) {
   return 'ready'
 }
 
-export function useBingo() {
+export function useBingo({ onWordFound, onWin } = {}) {
   const saved = loadState()
   const initial = saved?.grid ? { grid: saved.grid, marked: saved.marked } : drawGrid()
 
@@ -80,6 +74,14 @@ export function useBingo() {
   const startTime = ref(saved?.startTime ?? null)
   const endTime = ref(saved?.endTime ?? null)
   const bingoCount = ref(saved?.bingoCount ?? 0)
+  const foundWords = ref(saved?.foundWords ?? [])
+  const shuffleLocked = ref(
+    saved?.shuffleLocked ??
+      (saved?.startTime != null ||
+        (saved?.marked?.some(Boolean) ?? false) ||
+        saved?.phase === 'playing' ||
+        saved?.phase === 'won')
+  )
   const tick = ref(0)
 
   let timerInterval = null
@@ -114,7 +116,24 @@ export function useBingo() {
       startTime: startTime.value,
       endTime: endTime.value,
       bingoCount: bingoCount.value,
+      foundWords: foundWords.value,
+      shuffleLocked: shuffleLocked.value,
     })
+  }
+
+  function addFoundWordLocal(word) {
+    if (!word || foundWords.value.includes(word)) return
+    foundWords.value = [...foundWords.value, word].sort((a, b) => a.localeCompare(b, 'fi'))
+    onWordFound?.(word)
+  }
+
+  async function syncWithFirebase(mergeFn) {
+    if (!mergeFn || !username.value) return
+    const merged = await mergeFn(username.value, foundWords.value)
+    if (merged?.length) {
+      foundWords.value = [...merged].sort((a, b) => a.localeCompare(b, 'fi'))
+      persist()
+    }
   }
 
   function setUsername(name) {
@@ -132,7 +151,7 @@ export function useBingo() {
   }
 
   function shuffleGrid() {
-    if (phase.value !== 'ready') return
+    if (phase.value !== 'ready' || shuffleLocked.value) return
     const fresh = drawGrid()
     grid.value = fresh.grid
     marked.value = fresh.marked
@@ -143,7 +162,15 @@ export function useBingo() {
 
   function toggleCell(index) {
     if (phase.value === 'won') return
-    if (marked.value[index]) return
+
+    if (marked.value[index]) {
+      marked.value[index] = false
+      marked.value = [...marked.value]
+      persist()
+      return
+    }
+
+    shuffleLocked.value = true
 
     if (phase.value === 'ready') {
       phase.value = 'playing'
@@ -153,28 +180,18 @@ export function useBingo() {
 
     marked.value[index] = true
     marked.value = [...marked.value]
+    addFoundWordLocal(grid.value[index])
 
     if (checkWin(marked.value)) {
       endTime.value = Date.now()
       phase.value = 'won'
       bingoCount.value++
       stopTimer()
+      if (startTime.value) {
+        onWin?.(endTime.value - startTime.value)
+      }
     }
 
-    persist()
-  }
-
-  function clearMarks() {
-    if (phase.value !== 'playing') return
-    const fresh = createEmptyMarked()
-    if (useFreeCenter) {
-      fresh[12] = true
-    }
-    marked.value = fresh
-    phase.value = 'ready'
-    startTime.value = null
-    endTime.value = null
-    stopTimer()
     persist()
   }
 
@@ -202,7 +219,11 @@ export function useBingo() {
     endTime.value && startTime.value ? formatDuration(endTime.value - startTime.value) : '0:00'
   )
 
-  const canShuffle = computed(() => phase.value === 'ready')
+  const sortedFoundWords = computed(() =>
+    [...foundWords.value].sort((a, b) => a.localeCompare(b, 'fi'))
+  )
+
+  const canShuffle = computed(() => phase.value === 'ready' && !shuffleLocked.value)
   const isPlaying = computed(() => phase.value === 'playing' || phase.value === 'won')
 
   return {
@@ -213,6 +234,7 @@ export function useBingo() {
     marked,
     startTime,
     endTime,
+    foundWords: sortedFoundWords,
     setUsername,
     unlockWithPassword,
     shuffleGrid,
@@ -222,7 +244,7 @@ export function useBingo() {
     canShuffle,
     isPlaying,
     bingoCount,
-    clearMarks,
     resetGame,
+    syncWithFirebase,
   }
 }

@@ -13,7 +13,7 @@ const emit = defineEmits(['toggle'])
     type="button"
     class="bingo-cell"
     :class="{ 'bingo-cell--marked': marked }"
-    :disabled="disabled || marked"
+    :disabled="disabled"
     @click="emit('toggle')"
   >
     <span class="bingo-cell__text">{{ word }}</span>

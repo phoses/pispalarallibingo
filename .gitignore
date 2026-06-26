@@ -8,9 +8,8 @@ dist/
 *.log
 npm-debug.log*
 
-# Environment
+# Environment (ei versionhallintaan)
 .env
-.env.*
 
 # Editor
 .DS_Store
