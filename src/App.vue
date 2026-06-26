@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { BINGO_PASSWORD } from './data/bingoWords.js'
-import { useBingo } from './composables/useBingo.js'
+import { useBingo, TAB_STORAGE_KEY } from './composables/useBingo.js'
 import { usePlayerStats } from './composables/usePlayerStats.js'
 import UsernamePrompt from './components/UsernamePrompt.vue'
 import PasswordPrompt from './components/PasswordPrompt.vue'
@@ -10,8 +10,8 @@ import AppTabs from './components/AppTabs.vue'
 import BingoBoard from './components/BingoBoard.vue'
 import Leaderboard from './components/Leaderboard.vue'
 import FoundWords from './components/FoundWords.vue'
-
-const TAB_KEY = 'pispala-bingo-tab'
+import LogoutConfirm from './components/LogoutConfirm.vue'
+import InstallPrompt from './components/InstallPrompt.vue'
 
 const {
   leaderboard,
@@ -44,6 +44,7 @@ const {
   isPlaying,
   bingoCount,
   resetGame,
+  logout,
   hydrateFromFirebase,
 } = useBingo({
   onWordFound: async (word) => {
@@ -59,10 +60,11 @@ const {
   saveGameState,
 })
 
-const activeTab = ref(localStorage.getItem(TAB_KEY) ?? 'bingo')
+const activeTab = ref(localStorage.getItem(TAB_STORAGE_KEY) ?? 'bingo')
+const showLogoutConfirm = ref(false)
 
 watch(activeTab, (tab) => {
-  localStorage.setItem(TAB_KEY, tab)
+  localStorage.setItem(TAB_STORAGE_KEY, tab)
   if (tab === 'leaderboard' || tab === 'words') loadPlayerData()
 })
 
@@ -80,6 +82,20 @@ function onUnlock(password) {
 
 function onSetUsername(name) {
   setUsername(name)
+}
+
+function onLogoutRequest() {
+  showLogoutConfirm.value = true
+}
+
+function onLogoutCancel() {
+  showLogoutConfirm.value = false
+}
+
+function onLogoutConfirm() {
+  showLogoutConfirm.value = false
+  logout()
+  activeTab.value = 'bingo'
 }
 </script>
 
@@ -102,6 +118,13 @@ function onSetUsername(name) {
           :bingo-count="bingoCount"
           :is-playing="isPlaying"
           :formatted-elapsed="formattedElapsed"
+          @logout-request="onLogoutRequest"
+        />
+        <LogoutConfirm
+          v-if="showLogoutConfirm"
+          :username="username"
+          @confirm="onLogoutConfirm"
+          @cancel="onLogoutCancel"
         />
         <AppTabs v-model="activeTab" />
         <div class="app-content">
@@ -136,5 +159,6 @@ function onSetUsername(name) {
         </div>
       </div>
     </template>
+    <InstallPrompt />
   </main>
 </template>

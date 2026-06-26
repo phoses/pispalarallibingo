@@ -3,6 +3,7 @@ import { bingoWords, useFreeCenter } from '../data/bingoWords.js'
 import { formatDuration } from '../utils/format.js'
 
 const AUTH_STORAGE_KEY = 'pispala-bingo-auth'
+export const TAB_STORAGE_KEY = 'pispala-bingo-tab'
 const GRID_SIZE = 25
 
 function createEmptyMarked() {
@@ -69,6 +70,12 @@ function loadAuth() {
 
 function saveAuth(username, unlocked) {
   localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ username, unlocked }))
+}
+
+function clearLocalStorage() {
+  localStorage.removeItem(AUTH_STORAGE_KEY)
+  localStorage.removeItem('pispala-bingo-v1')
+  localStorage.removeItem(TAB_STORAGE_KEY)
 }
 
 function getAuthPhase(auth) {
@@ -241,6 +248,24 @@ export function useBingo({ onWordFound, onWordRemoved, onWin, loadGameState, sav
     persistGame()
   }
 
+  function logout() {
+    stopTimer()
+    clearLocalStorage()
+    const fresh = drawGrid()
+    username.value = ''
+    unlocked.value = false
+    phase.value = 'username'
+    grid.value = fresh.grid
+    marked.value = fresh.marked
+    startTime.value = null
+    endTime.value = null
+    bingoCount.value = 0
+    shuffleLocked.value = false
+    gameLoading.value = false
+    discoveredWords.value = new Set()
+    tick.value = 0
+  }
+
   const elapsedMs = computed(() => {
     tick.value
     if (!startTime.value) return 0
@@ -275,6 +300,7 @@ export function useBingo({ onWordFound, onWordRemoved, onWin, loadGameState, sav
     isPlaying,
     bingoCount,
     resetGame,
+    logout,
     hydrateFromFirebase,
   }
 }

@@ -26,9 +26,12 @@ Firestore-kokoelma: `players` – jokainen pelaaja omana dokumenttinaan.
 | `foundWords` | Löydetyt sanat (lista) |
 | `wins` | Bingo-voitot (`timeMs`, `time`, `at`) |
 
-### GitHub Pages
+### GitHub Actions (deploy)
 
-Lisää samat `VITE_FIREBASE_*` -arvot repoon **Settings → Secrets and variables → Actions**.
+Lisää repoon **Settings → Secrets and variables → Actions**:
+
+- `VITE_FIREBASE_*` – samat arvot kuin `.env`
+- `FIREBASE_SERVICE_ACCOUNT` – Firebase Console → Project settings → Service accounts → **Generate new private key** (koko JSON-tiedoston sisältö)
 
 ## Peli
 
@@ -38,11 +41,11 @@ Lisää samat `VITE_FIREBASE_*` -arvot repoon **Settings → Secrets and variabl
 4. **Tulostaulu** – eniten sanoja löytäneet + paras voittoaika
 5. **Löydetyt sanat** – omat löydetyt sanat
 
-## GitHub Pages
+## Julkaisu (Firebase Hosting)
 
-1. Työnnä repo GitHubiin
-2. **Settings → Pages → Source:** GitHub Actions
-3. Push `main`-haaraan → automaattinen deploy
+Push `main`-haaraan → GitHub Actions rakentaa ja julkaisee osoitteeseen `https://<projekti-id>.web.app`.
+
+Paikallinen julkaisu: `npm run build && firebase deploy --only hosting`
 
 ## Rakenne
 
