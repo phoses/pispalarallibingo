@@ -48,7 +48,7 @@ export const bingoWords = [
   '90-luvun biisi soi',
   'Paranoid',
   '"Missä Topi?"',
-  'Avuoauto',
+  'Avoauto',
   'Pubiruusu',
   'Paikalliset paheksuu pubissa'
 ]
