@@ -23,6 +23,7 @@ jobs:
       - run: npm ci
       - run: npm run build
         env:
+          VITE_BUILD_SHA: ${{ github.sha }}
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
           VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
           VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
@@ -30,6 +31,17 @@ jobs:
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
 
-      - run: npx firebase-tools@latest deploy --only hosting --project "${{ secrets.VITE_FIREBASE_PROJECT_ID }}" --non-interactive
+      - name: Deploy to Firebase Hosting
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+        run: |
+          set +e
+          OUTPUT=$(npx firebase-tools@latest deploy --only hosting --project "$FIREBASE_PROJECT_ID" --non-interactive 2>&1)
+          EXIT=$?
+          echo "$OUTPUT"
+          if [ $EXIT -ne 0 ] && echo "$OUTPUT" | grep -q "is the current active version"; then
+            echo "Hosting is already on this version — no changes to publish."
+            exit 0
+          fi
+          exit $EXIT
