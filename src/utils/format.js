@@ -8,3 +8,21 @@ export function formatDuration(ms) {
 export function playerId(username) {
   return username.trim().toLowerCase().replace(/[^a-z0-9åäöü_-]/gi, '_')
 }
+
+export function wordId(word) {
+  return word
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9åäöü_-]/gi, '_')
+    .slice(0, 150)
+}
+
+export function formatFoundAt(timestamp) {
+  if (!timestamp) return ''
+  return new Intl.DateTimeFormat('fi-FI', {
+    day: 'numeric',
+    month: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(timestamp))
+}

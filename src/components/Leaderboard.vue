@@ -32,13 +32,13 @@ defineEmits(['refresh'])
         :class="{
           'leaderboard-row--top': index === 0,
           'leaderboard-row--winner': row.hasWin,
+          'leaderboard-row--no-time': !row.hasWin,
         }"
       >
         <span class="leaderboard-rank">{{ index + 1 }}.</span>
         <span class="leaderboard-name">{{ row.username }}</span>
         <span class="leaderboard-words">{{ row.wordCount }} sanaa</span>
         <span v-if="row.bestTime" class="leaderboard-time">{{ row.bestTime }}</span>
-        <span v-else class="leaderboard-time leaderboard-time--empty">–</span>
       </li>
     </ol>
 

@@ -467,6 +467,10 @@ body {
   border-color: var(--snes-orange);
 }
 
+.leaderboard-row--no-time {
+  grid-template-columns: 24px 1fr auto;
+}
+
 .leaderboard-rank {
   color: var(--snes-magenta);
 }
@@ -502,11 +506,23 @@ body {
 }
 
 .found-word {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   padding: 10px 12px;
   background: var(--snes-surface);
   border: 2px solid var(--snes-cyan);
   font-size: 6px;
   line-height: 1.5;
+}
+
+.found-word__text {
+  line-height: 1.4;
+}
+
+.found-word__meta {
+  font-size: 5px;
+  color: var(--snes-cyan);
 }
 
 .found-word:nth-child(odd) {

@@ -8,12 +8,17 @@ import {
   updateDoc,
   arrayUnion,
   serverTimestamp,
+  runTransaction,
 } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from '../firebase/config.js'
-import { formatDuration, playerId } from '../utils/format.js'
+import { formatDuration, formatFoundAt, playerId, wordId } from '../utils/format.js'
 
 function playerRef(username) {
   return doc(db, 'players', playerId(username))
+}
+
+function discoveryRef(word) {
+  return doc(db, 'discoveredWords', wordId(word))
 }
 
 function bestWin(wins) {
@@ -31,6 +36,15 @@ function sortLeaderboard(rows) {
     if (bHasWin) return 1
     if (b.wordCount !== a.wordCount) return b.wordCount - a.wordCount
     return a.username.localeCompare(b.username, 'fi')
+  })
+}
+
+function sortDiscoveries(items) {
+  return items.sort((a, b) => {
+    if (a.foundAt && b.foundAt) return b.foundAt - a.foundAt
+    if (a.foundAt) return -1
+    if (b.foundAt) return 1
+    return a.word.localeCompare(b.word, 'fi')
   })
 }
 
@@ -61,6 +75,26 @@ export function usePlayerStats() {
     }
   }
 
+  async function registerWordDiscovery(username, word) {
+    if (!isFirebaseConfigured() || !db || !username || !word) return
+    const ref = discoveryRef(word)
+    const foundAt = Date.now()
+    try {
+      await runTransaction(db, async (transaction) => {
+        const snap = await transaction.get(ref)
+        if (!snap.exists()) {
+          transaction.set(ref, {
+            word,
+            username: username.trim(),
+            foundAt,
+          })
+        }
+      })
+    } catch (e) {
+      console.error('Sanan löydön tallennus epäonnistui', e)
+    }
+  }
+
   async function syncFoundWords(username, words) {
     if (!isFirebaseConfigured() || !username || words.length === 0) return
     await ensurePlayer(username)
@@ -69,6 +103,9 @@ export function usePlayerStats() {
     const remoteSet = new Set(remote?.foundWords ?? [])
     const missing = words.filter((w) => !remoteSet.has(w))
     if (missing.length === 0) return
+    for (const word of missing) {
+      await registerWordDiscovery(username, word)
+    }
     await updateDoc(ref, {
       foundWords: arrayUnion(...missing),
       updatedAt: serverTimestamp(),
@@ -78,6 +115,7 @@ export function usePlayerStats() {
   async function addFoundWord(username, word) {
     if (!isFirebaseConfigured() || !username || !word) return
     await ensurePlayer(username)
+    await registerWordDiscovery(username, word)
     await updateDoc(playerRef(username), {
       foundWords: arrayUnion(word),
       updatedAt: serverTimestamp(),
@@ -105,12 +143,40 @@ export function usePlayerStats() {
     const remoteSet = new Set(remote?.foundWords ?? [])
     const missing = merged.filter((w) => !remoteSet.has(w))
     if (missing.length > 0) {
+      for (const word of missing) {
+        await registerWordDiscovery(username, word)
+      }
       await updateDoc(playerRef(username), {
         foundWords: arrayUnion(...missing),
         updatedAt: serverTimestamp(),
       })
     }
     return merged
+  }
+
+  async function loadDiscoveries(fallbackWords = []) {
+    const discoveryMap = new Map()
+    const snap = await getDocs(collection(db, 'discoveredWords'))
+    for (const d of snap.docs) {
+      const data = d.data()
+      discoveryMap.set(data.word, {
+        word: data.word,
+        username: data.username ?? null,
+        foundAt: data.foundAt ?? null,
+        foundAtLabel: formatFoundAt(data.foundAt),
+      })
+    }
+    for (const word of fallbackWords) {
+      if (!discoveryMap.has(word)) {
+        discoveryMap.set(word, {
+          word,
+          username: null,
+          foundAt: null,
+          foundAtLabel: '',
+        })
+      }
+    }
+    return sortDiscoveries([...discoveryMap.values()])
   }
 
   async function loadPlayerData() {
@@ -140,7 +206,7 @@ export function usePlayerStats() {
         }
       })
       leaderboard.value = sortLeaderboard(rows)
-      globalFoundWords.value = [...allWords].sort((a, b) => a.localeCompare(b, 'fi'))
+      globalFoundWords.value = await loadDiscoveries([...allWords])
     } catch (e) {
       error.value = 'Tietojen lataus epäonnistui'
       console.error(e)

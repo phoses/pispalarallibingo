@@ -27,7 +27,12 @@ defineEmits(['refresh'])
     </p>
 
     <ul v-else class="found-words-list">
-      <li v-for="word in words" :key="word" class="found-word">{{ word }}</li>
+      <li v-for="item in words" :key="item.word" class="found-word">
+        <span class="found-word__text">{{ item.word }}</span>
+        <span v-if="item.username" class="found-word__meta">
+          {{ item.username }} · {{ item.foundAtLabel }}
+        </span>
+      </li>
     </ul>
 
     <p v-if="firebaseConfigured && !loading && !error && words.length > 0" class="panel-hint">

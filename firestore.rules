@@ -10,5 +10,16 @@ service cloud.firestore {
         && request.resource.data.wins is list;
       allow delete: if false;
     }
+
+    match /discoveredWords/{wordDocId} {
+      allow read: if true;
+      allow create: if !exists(/databases/$(database)/documents/discoveredWords/$(wordDocId))
+        && request.resource.data.word is string
+        && request.resource.data.username is string
+        && request.resource.data.username.size() >= 1
+        && request.resource.data.username.size() <= 32
+        && request.resource.data.foundAt is number;
+      allow update, delete: if false;
+    }
   }
 }
