@@ -2,7 +2,7 @@ import { ref, computed, onUnmounted } from 'vue'
 import { bingoWords, useFreeCenter } from '../data/bingoWords.js'
 import { formatDuration } from '../utils/format.js'
 
-const STORAGE_KEY = 'pispala-bingo-v1'
+const AUTH_STORAGE_KEY = 'pispala-bingo-auth'
 const GRID_SIZE = 25
 
 function createEmptyMarked() {
@@ -40,48 +40,59 @@ function checkWin(marked) {
   return false
 }
 
-function loadState() {
+function loadAuth() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
-    return JSON.parse(raw)
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY)
+    if (raw) {
+      const data = JSON.parse(raw)
+      return {
+        username: data.username ?? '',
+        unlocked: Boolean(data.unlocked),
+      }
+    }
+    const legacy = localStorage.getItem('pispala-bingo-v1')
+    if (legacy) {
+      const data = JSON.parse(legacy)
+      const auth = {
+        username: data.username ?? '',
+        unlocked: Boolean(data.unlocked),
+      }
+      saveAuth(auth.username, auth.unlocked)
+      localStorage.removeItem('pispala-bingo-v1')
+      return auth
+    }
+    return { username: '', unlocked: false }
   } catch {
-    return null
+    return { username: '', unlocked: false }
   }
 }
 
-function saveState(state) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+function saveAuth(username, unlocked) {
+  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ username, unlocked }))
 }
 
-function getInitialPhase(saved) {
-  if (!saved?.username) return 'username'
-  if (!saved?.unlocked) return 'password'
-  if (saved.phase === 'won') return 'won'
-  if (saved.phase === 'playing') return 'playing'
-  return 'ready'
+function getAuthPhase(auth) {
+  if (!auth.username) return 'username'
+  if (!auth.unlocked) return 'password'
+  return 'game'
 }
 
-export function useBingo({ onWordFound, onWin } = {}) {
-  const saved = loadState()
-  const initial = saved?.grid ? { grid: saved.grid, marked: saved.marked } : drawGrid()
+export function useBingo({ onWordFound, onWordRemoved, onWin, loadGameState, saveGameState } = {}) {
+  const auth = loadAuth()
+  const initial = drawGrid()
 
-  const username = ref(saved?.username ?? '')
-  const unlocked = ref(saved?.unlocked ?? false)
-  const phase = ref(getInitialPhase(saved))
+  const username = ref(auth.username)
+  const unlocked = ref(auth.unlocked)
+  const authPhase = getAuthPhase(auth)
+  const phase = ref(authPhase === 'game' ? 'ready' : authPhase)
   const grid = ref(initial.grid)
-  const marked = ref(initial.marked ?? createEmptyMarked())
-  const startTime = ref(saved?.startTime ?? null)
-  const endTime = ref(saved?.endTime ?? null)
-  const bingoCount = ref(saved?.bingoCount ?? 0)
-  const foundWords = ref(saved?.foundWords ?? [])
-  const shuffleLocked = ref(
-    saved?.shuffleLocked ??
-      (saved?.startTime != null ||
-        (saved?.marked?.some(Boolean) ?? false) ||
-        saved?.phase === 'playing' ||
-        saved?.phase === 'won')
-  )
+  const marked = ref(initial.marked)
+  const startTime = ref(null)
+  const endTime = ref(null)
+  const bingoCount = ref(0)
+  const shuffleLocked = ref(false)
+  const gameLoading = ref(false)
+  const discoveredWords = ref(new Set())
   const tick = ref(0)
 
   let timerInterval = null
@@ -100,53 +111,64 @@ export function useBingo({ onWordFound, onWin } = {}) {
     }
   }
 
-  if (phase.value === 'playing') {
-    startTimer()
-  }
-
   onUnmounted(stopTimer)
 
-  function persist() {
-    saveState({
-      username: username.value,
-      unlocked: unlocked.value,
-      phase: phase.value,
-      grid: grid.value,
-      marked: marked.value,
-      startTime: startTime.value,
-      endTime: endTime.value,
-      bingoCount: bingoCount.value,
-      foundWords: foundWords.value,
-      shuffleLocked: shuffleLocked.value,
-    })
+  function persistAuth() {
+    saveAuth(username.value, unlocked.value)
   }
 
-  function addFoundWordLocal(word) {
-    if (!word || foundWords.value.includes(word)) return
-    foundWords.value = [...foundWords.value, word].sort((a, b) => a.localeCompare(b, 'fi'))
-    onWordFound?.(word)
+  async function persistGame() {
+    if (!saveGameState || !username.value || !unlocked.value) return
+    try {
+      await saveGameState(username.value, {
+        grid: grid.value,
+        marked: marked.value,
+        phase: phase.value,
+        startTime: startTime.value,
+        endTime: endTime.value,
+        shuffleLocked: shuffleLocked.value,
+      })
+    } catch (e) {
+      console.error('Pelin tilan tallennus epäonnistui', e)
+    }
   }
 
-  async function syncWithFirebase(mergeFn) {
-    if (!mergeFn || !username.value) return
-    const merged = await mergeFn(username.value, foundWords.value)
-    if (merged?.length) {
-      foundWords.value = [...merged].sort((a, b) => a.localeCompare(b, 'fi'))
-      persist()
+  async function hydrateFromFirebase() {
+    if (!loadGameState || !username.value || !unlocked.value) return
+    gameLoading.value = true
+    try {
+      const remote = await loadGameState(username.value)
+      if (remote?.grid?.length === GRID_SIZE) {
+        grid.value = remote.grid
+        marked.value = remote.marked ?? createEmptyMarked()
+        phase.value = remote.phase ?? 'ready'
+        startTime.value = remote.startTime ?? null
+        endTime.value = remote.endTime ?? null
+        shuffleLocked.value = remote.shuffleLocked ?? false
+        bingoCount.value = remote.bingoCount ?? 0
+        discoveredWords.value = new Set(remote.foundWords ?? [])
+        if (phase.value === 'playing') startTimer()
+      } else {
+        await persistGame()
+      }
+    } catch (e) {
+      console.error('Pelin tilan lataus epäonnistui', e)
+    } finally {
+      gameLoading.value = false
     }
   }
 
   function setUsername(name) {
     username.value = name.trim()
     phase.value = unlocked.value ? 'ready' : 'password'
-    persist()
+    persistAuth()
   }
 
   function unlockWithPassword(password, correctPassword) {
     if (password !== correctPassword) return false
     unlocked.value = true
     phase.value = 'ready'
-    persist()
+    persistAuth()
     return true
   }
 
@@ -157,16 +179,23 @@ export function useBingo({ onWordFound, onWin } = {}) {
     marked.value = fresh.marked
     startTime.value = null
     endTime.value = null
-    persist()
+    persistGame()
   }
 
   function toggleCell(index) {
     if (phase.value === 'won') return
 
     if (marked.value[index]) {
+      const word = grid.value[index]
       marked.value[index] = false
       marked.value = [...marked.value]
-      persist()
+      if (discoveredWords.value.has(word)) {
+        const next = new Set(discoveredWords.value)
+        next.delete(word)
+        discoveredWords.value = next
+        onWordRemoved?.(word)
+      }
+      persistGame()
       return
     }
 
@@ -180,7 +209,12 @@ export function useBingo({ onWordFound, onWin } = {}) {
 
     marked.value[index] = true
     marked.value = [...marked.value]
-    addFoundWordLocal(grid.value[index])
+
+    const word = grid.value[index]
+    if (!discoveredWords.value.has(word)) {
+      discoveredWords.value = new Set([...discoveredWords.value, word])
+      onWordFound?.(word)
+    }
 
     if (checkWin(marked.value)) {
       endTime.value = Date.now()
@@ -192,7 +226,7 @@ export function useBingo({ onWordFound, onWin } = {}) {
       }
     }
 
-    persist()
+    persistGame()
   }
 
   function resetGame() {
@@ -204,7 +238,7 @@ export function useBingo({ onWordFound, onWin } = {}) {
     startTime.value = null
     endTime.value = null
     stopTimer()
-    persist()
+    persistGame()
   }
 
   const elapsedMs = computed(() => {
@@ -219,10 +253,6 @@ export function useBingo({ onWordFound, onWin } = {}) {
     endTime.value && startTime.value ? formatDuration(endTime.value - startTime.value) : '0:00'
   )
 
-  const sortedFoundWords = computed(() =>
-    [...foundWords.value].sort((a, b) => a.localeCompare(b, 'fi'))
-  )
-
   const canShuffle = computed(() => phase.value === 'ready' && !shuffleLocked.value)
   const isPlaying = computed(() => phase.value === 'playing' || phase.value === 'won')
 
@@ -234,7 +264,7 @@ export function useBingo({ onWordFound, onWin } = {}) {
     marked,
     startTime,
     endTime,
-    foundWords: sortedFoundWords,
+    gameLoading,
     setUsername,
     unlockWithPassword,
     shuffleGrid,
@@ -245,6 +275,6 @@ export function useBingo({ onWordFound, onWin } = {}) {
     isPlaying,
     bingoCount,
     resetGame,
-    syncWithFirebase,
+    hydrateFromFirebase,
   }
 }

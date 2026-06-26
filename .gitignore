@@ -19,7 +19,6 @@ npm-debug.log*
 /firebase-debug.log
 /firebase-debug.*.log
 .firebaserc
-/firebase.json
 *.cache
 hosting/.cache
 /functions/node_modules/

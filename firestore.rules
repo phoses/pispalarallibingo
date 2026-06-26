@@ -7,7 +7,11 @@ service cloud.firestore {
         && request.resource.data.username.size() >= 1
         && request.resource.data.username.size() <= 32
         && request.resource.data.foundWords is list
-        && request.resource.data.wins is list;
+        && request.resource.data.wins is list
+        && request.resource.data.grid is list
+        && request.resource.data.marked is list
+        && request.resource.data.phase is string
+        && request.resource.data.shuffleLocked is bool;
       allow delete: if false;
     }
 
@@ -19,7 +23,7 @@ service cloud.firestore {
         && request.resource.data.username.size() >= 1
         && request.resource.data.username.size() <= 32
         && request.resource.data.foundAt is number;
-      allow update, delete: if false;
+      allow update, delete: if true;
     }
   }
 }

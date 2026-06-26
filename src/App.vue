@@ -19,17 +19,21 @@ const {
   loading: remoteLoading,
   error: remoteError,
   addFoundWord,
+  removeFoundWord,
   recordWin,
-  mergePlayerData,
+  loadGameState,
+  saveGameState,
   loadPlayerData,
   isFirebaseConfigured,
 } = usePlayerStats()
 
 const {
   username,
+  unlocked,
   phase,
   grid,
   marked,
+  gameLoading,
   setUsername,
   unlockWithPassword,
   shuffleGrid,
@@ -40,10 +44,19 @@ const {
   isPlaying,
   bingoCount,
   resetGame,
-  syncWithFirebase,
+  hydrateFromFirebase,
 } = useBingo({
-  onWordFound: (word) => addFoundWord(username.value, word),
+  onWordFound: async (word) => {
+    const added = await addFoundWord(username.value, word)
+    if (added) loadPlayerData()
+  },
+  onWordRemoved: async (word) => {
+    const removed = await removeFoundWord(username.value, word)
+    if (removed) loadPlayerData()
+  },
   onWin: (timeMs) => recordWin(username.value, timeMs),
+  loadGameState,
+  saveGameState,
 })
 
 const activeTab = ref(localStorage.getItem(TAB_KEY) ?? 'bingo')
@@ -53,31 +66,20 @@ watch(activeTab, (tab) => {
   if (tab === 'leaderboard' || tab === 'words') loadPlayerData()
 })
 
-async function syncFirebase() {
-  await syncWithFirebase(mergePlayerData)
-}
-
 watch(
-  () => [phase.value, username.value],
-  ([currentPhase, name]) => {
-    if (currentPhase !== 'username' && currentPhase !== 'password' && name) {
-      syncFirebase()
-    }
+  () => [username.value, unlocked.value],
+  ([name, isUnlocked]) => {
+    if (name && isUnlocked) hydrateFromFirebase()
   },
   { immediate: true }
 )
 
 function onUnlock(password) {
-  if (unlockWithPassword(password, BINGO_PASSWORD)) {
-    syncFirebase()
-  }
+  unlockWithPassword(password, BINGO_PASSWORD)
 }
 
 function onSetUsername(name) {
   setUsername(name)
-  if (phase.value !== 'username' && phase.value !== 'password') {
-    syncFirebase()
-  }
 }
 </script>
 
@@ -103,8 +105,9 @@ function onSetUsername(name) {
         />
         <AppTabs v-model="activeTab" />
         <div class="app-content">
+          <p v-if="gameLoading" class="panel-message">Ladataan peliä...</p>
           <BingoBoard
-            v-show="activeTab === 'bingo'"
+            v-show="activeTab === 'bingo' && !gameLoading"
             :grid="grid"
             :marked="marked"
             :phase="phase"

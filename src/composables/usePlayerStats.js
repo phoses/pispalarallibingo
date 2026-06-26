@@ -6,7 +6,9 @@ import {
   getDocs,
   setDoc,
   updateDoc,
+  deleteDoc,
   arrayUnion,
+  arrayRemove,
   serverTimestamp,
   runTransaction,
 } from 'firebase/firestore'
@@ -70,6 +72,12 @@ export function usePlayerStats() {
         username: username.trim(),
         foundWords: [],
         wins: [],
+        grid: [],
+        marked: [],
+        phase: 'ready',
+        startTime: null,
+        endTime: null,
+        shuffleLocked: false,
         updatedAt: serverTimestamp(),
       })
     }
@@ -95,31 +103,38 @@ export function usePlayerStats() {
     }
   }
 
-  async function syncFoundWords(username, words) {
-    if (!isFirebaseConfigured() || !username || words.length === 0) return
-    await ensurePlayer(username)
-    const ref = playerRef(username)
-    const remote = await fetchPlayer(username)
-    const remoteSet = new Set(remote?.foundWords ?? [])
-    const missing = words.filter((w) => !remoteSet.has(w))
-    if (missing.length === 0) return
-    for (const word of missing) {
-      await registerWordDiscovery(username, word)
-    }
-    await updateDoc(ref, {
-      foundWords: arrayUnion(...missing),
-      updatedAt: serverTimestamp(),
-    })
+  async function isWordHeldByAnyPlayer(word) {
+    const snap = await getDocs(collection(db, 'players'))
+    return snap.docs.some((d) => d.data().foundWords?.includes(word))
   }
 
   async function addFoundWord(username, word) {
-    if (!isFirebaseConfigured() || !username || !word) return
+    if (!isFirebaseConfigured() || !username || !word) return false
     await ensurePlayer(username)
+    const remote = await fetchPlayer(username)
+    if (remote?.foundWords?.includes(word)) return false
     await registerWordDiscovery(username, word)
     await updateDoc(playerRef(username), {
       foundWords: arrayUnion(word),
       updatedAt: serverTimestamp(),
     })
+    return true
+  }
+
+  async function removeFoundWord(username, word) {
+    if (!isFirebaseConfigured() || !username || !word) return false
+    await ensurePlayer(username)
+    const remote = await fetchPlayer(username)
+    if (!remote?.foundWords?.includes(word)) return false
+    await updateDoc(playerRef(username), {
+      foundWords: arrayRemove(word),
+      updatedAt: serverTimestamp(),
+    })
+    const stillHeld = await isWordHeldByAnyPlayer(word)
+    if (!stillHeld) {
+      await deleteDoc(discoveryRef(word))
+    }
+    return true
   }
 
   async function recordWin(username, timeMs) {
@@ -135,23 +150,35 @@ export function usePlayerStats() {
     })
   }
 
-  async function mergePlayerData(username, localWords) {
-    if (!isFirebaseConfigured() || !username) return localWords
+  async function loadGameState(username) {
+    if (!isFirebaseConfigured() || !username) return null
     await ensurePlayer(username)
-    const remote = await fetchPlayer(username)
-    const merged = [...new Set([...(remote?.foundWords ?? []), ...localWords])]
-    const remoteSet = new Set(remote?.foundWords ?? [])
-    const missing = merged.filter((w) => !remoteSet.has(w))
-    if (missing.length > 0) {
-      for (const word of missing) {
-        await registerWordDiscovery(username, word)
-      }
-      await updateDoc(playerRef(username), {
-        foundWords: arrayUnion(...missing),
-        updatedAt: serverTimestamp(),
-      })
+    const data = await fetchPlayer(username)
+    if (!data) return null
+    return {
+      grid: data.grid,
+      marked: data.marked,
+      phase: data.phase,
+      startTime: data.startTime ?? null,
+      endTime: data.endTime ?? null,
+      shuffleLocked: data.shuffleLocked ?? false,
+      bingoCount: data.wins?.length ?? 0,
+      foundWords: data.foundWords ?? [],
     }
-    return merged
+  }
+
+  async function saveGameState(username, state) {
+    if (!isFirebaseConfigured() || !username) return
+    await ensurePlayer(username)
+    await updateDoc(playerRef(username), {
+      grid: state.grid,
+      marked: state.marked,
+      phase: state.phase,
+      startTime: state.startTime,
+      endTime: state.endTime,
+      shuffleLocked: state.shuffleLocked,
+      updatedAt: serverTimestamp(),
+    })
   }
 
   async function loadDiscoveries(fallbackWords = []) {
@@ -221,10 +248,11 @@ export function usePlayerStats() {
     loading,
     error,
     fetchPlayer,
-    syncFoundWords,
     addFoundWord,
+    removeFoundWord,
     recordWin,
-    mergePlayerData,
+    loadGameState,
+    saveGameState,
     loadPlayerData,
     loadLeaderboard: loadPlayerData,
     isFirebaseConfigured,
