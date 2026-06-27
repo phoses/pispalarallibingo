@@ -36,7 +36,7 @@ export const bingoWords = [
   'Poliisi',
   'Pubiruusu',
   'Pyynikin näkö\u00ADtorni',
-  'Pyörä\u00ADilijä ohittaa',
+  'Pyöräi\u00ADlijä ohittaa',
   'Pyörän raato',
   'Ratikka pysähtyy',
   'Rosen\u00ADdahlin terassi',
@@ -54,6 +54,6 @@ export const bingoWords = [
   'Tuoppi kaatuu',
   'Ukkonen',
   'Vanhojen muistelu',
-  'Vessa epäkunn\u00ADossa',
+  'Vessa epäkun\u00ADnossa',
   'We are the kings',
 ]
