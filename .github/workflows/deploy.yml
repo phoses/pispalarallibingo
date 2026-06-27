@@ -20,10 +20,13 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Unique build stamp
+        run: echo "${{ github.run_id }}-${{ github.run_attempt }}-$(date -u +%Y%m%dT%H%M%SZ)" > public/build-id.txt
+
       - run: npm ci
       - run: npm run build
         env:
-          VITE_BUILD_SHA: ${{ github.sha }}-${{ github.run_number }}.${{ github.run_attempt }}
+          VITE_BUILD_SHA: ${{ github.run_id }}-${{ github.run_attempt }}
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
           VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
           VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
@@ -35,14 +38,4 @@ jobs:
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
           FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-        run: |
-          LOG=$(mktemp)
-          if npx firebase-tools@latest deploy --only hosting --project "$FIREBASE_PROJECT_ID" --non-interactive 2>&1 | tee "$LOG"; then
-            echo "::notice title=Firebase Hosting::Julkaisu onnistui."
-            exit 0
-          fi
-          if grep -q "is the current active version" "$LOG"; then
-            echo "::notice title=Firebase Hosting::Sivu on jo ajantasalla — sama sisältö kuin tuotannossa."
-            exit 0
-          fi
-          exit 1
+        run: npx firebase-tools@latest deploy --only hosting --project "$FIREBASE_PROJECT_ID" --non-interactive

@@ -4,6 +4,9 @@ node_modules/
 # Build output
 dist/
 
+# CI build stamp (generated in GitHub Actions)
+public/build-id.txt
+
 # Logs
 *.log
 npm-debug.log*
