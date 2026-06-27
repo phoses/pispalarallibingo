@@ -10,8 +10,8 @@ export default defineConfig({
       includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'icons/*.png'],
       manifest: {
         name: 'PispalaRalli-Bingo',
-        short_name: 'Bingo',
-        description: 'Pubikierros-bingo',
+        short_name: 'PispalaRalliBingo',
+        description: 'PispalaRalliBingo',
         theme_color: '#1b6b8a',
         background_color: '#5ec2e8',
         display: 'standalone',
