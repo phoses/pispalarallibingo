@@ -1,4 +1,4 @@
-export const BINGO_PASSWORD = 'hervantarall1'
+export const BINGO_PASSWORD = 'hervantaralli24'
 
 export const useFreeCenter = false
 
